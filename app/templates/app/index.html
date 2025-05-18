@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini Code Editor</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Fira Code', monospace;
+      background: #121212;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    #editor {
+      width: 100%;
+      max-width: 1000px;
+      height: 60vh;
+      border: 1px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    #controls {
+      max-width: 1000px;
+      width: 100%;
+      margin-top: 15px;
+    }
+    textarea {
+      width: 100%;
+      height: 60px;
+      background: #1e1e1e;
+      color: white;
+      border: 1px solid #333;
+      padding: 10px;
+      border-radius: 5px;
+      resize: vertical;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #03dac6;
+      color: black;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-top: 10px;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #01c0ad;
+    }
+    #terminal {
+      background: #000000;
+      padding: 15px;
+      white-space: pre-wrap;
+      min-height: 200px;
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 20px;
+      border-radius: 5px;
+      border: 1px solid #444;
+      font-family: monospace;
+      overflow-y: auto;
+    }
+    #loading {
+      display: none;
+      margin-top: 10px;
+      font-style: italic;
+      color: #aaaaaa;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Mini Python Code Editor</h1>
+  <div id="editor"></div>
+
+  <div id="controls">
+    <label for="input">🔤 Input:</label>
+    <textarea id="input" placeholder="Enter input for your code (stdin)..."></textarea>
+    <button onclick="runCode()">▶️ Run Code</button>
+    <div id="loading">⏳ Running code, please wait...</div>
+  </div>
+
+  <div id="terminal"></div>
+
+  <script>
+    let editor;
+    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
+    require(['vs/editor/editor.main'], function () {
+      editor = monaco.editor.create(document.getElementById('editor'), {
+        value: '# Write your Python code here\nprint("Hello!")\nname = input("Enter your name: ")\nprint("Hi", name)',
+        language: 'python',
+        theme: 'vs-dark',
+        fontSize: 14,
+        minimap: { enabled: false },
+        roundedSelection: false,
+        scrollBeyondLastLine: false,
+      });
+    });
+
+    function runCode() {
+      const code = editor.getValue();
+      const input = document.getElementById('input').value;
+      const loading = document.getElementById('loading');
+      const terminal = document.getElementById('terminal');
+
+      loading.style.display = 'block';
+      terminal.textContent = '';
+
+      fetch('http://localhost:8000/editor/run/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, input })
+      })
+        .then(res => res.json())
+        .then(data => {
+          terminal.textContent = data.output;
+        })
+        .catch(err => {
+          terminal.textContent = 'An error occurred.';
+        })
+        .finally(() => {
+          loading.style.display = 'none';
+        });
+    }
+  </script>
+</body>
+</html>
